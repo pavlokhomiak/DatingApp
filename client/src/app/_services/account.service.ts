@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { BehaviorSubject, Observable, map } from 'rxjs';
+import { User } from '../_models/user';
 
 // service can be injected
 @Injectable({
@@ -10,10 +11,43 @@ import { Observable } from 'rxjs';
 export class AccountService {
 
   baseUrl = 'https://localhost:5001/api/';
+  // BehaviorSubject is Observable type which have initial value
+  private currentUserSource = new BehaviorSubject<User | null>(null);
+  currentUser$ = this.currentUserSource.asObservable();
 
   constructor(private http: HttpClient) { }
 
   login(model: any) : Observable<any> {
-    return this.http.post(this.baseUrl + 'account/login', model);
+    return this.http.post<User>(this.baseUrl + 'account/login', model).pipe(
+      map((response: User) => {
+        const user = response;
+        if (user) {
+          // save user in browser localStorage
+          localStorage.setItem('user', JSON.stringify(user))
+          this.currentUserSource.next(user);
+        }
+      })
+    )
+  }
+
+  register(model: any) {
+    return this.http.post<User>(this.baseUrl + 'account/register', model).pipe(
+      map(user => {
+        if (user) {
+          localStorage.setItem('user', JSON.stringify(user));
+          this.currentUserSource.next(user);
+        }
+        return user;
+      })
+    )
+  }
+
+  setCurrentUser(user: User) {
+    this.currentUserSource.next(user);
+  }
+
+  logout() {
+    localStorage.removeItem('user');
+    this.currentUserSource.next(null);
   }
 }
