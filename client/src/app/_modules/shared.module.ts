@@ -6,6 +6,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { TabsModule } from 'ngx-bootstrap/tabs';
 import { NgxGalleryModule } from '@kolkov/ngx-gallery';
 import { NgxSpinnerModule } from 'ngx-spinner';
+import { FileUploadModule } from 'ng2-file-upload';
 
 @NgModule({
   declarations: [],
@@ -21,7 +22,8 @@ import { NgxSpinnerModule } from 'ngx-spinner';
     NgxGalleryModule,
     NgxSpinnerModule.forRoot({ 
       type: 'like-scale-party' 
-    })
+    }),
+    FileUploadModule
   ],
   // export libs as well
   exports: [
@@ -29,7 +31,8 @@ import { NgxSpinnerModule } from 'ngx-spinner';
     BsDropdownModule,
     ToastrModule,
     NgxGalleryModule,
-    NgxSpinnerModule
+    NgxSpinnerModule,
+    FileUploadModule
   ]
 })
 export class SharedModule { }
