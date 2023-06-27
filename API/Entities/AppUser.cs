@@ -20,6 +20,8 @@ namespace API.Entities
         public string City { get; set; }
         public string Country { get; set; }
         public List<Photo> Photos { get; set; } = new List<Photo>();
+        public List<UserLike> LikedByUsers { get; set; }
+        public List<UserLike> LikedUsers { get; set; }
 
         // commented because mapper need have all Entity props to calculate Age field automaticaly 
         // but we do not need to query all entity so we specify Age field directly in AutoMapperProfiles
