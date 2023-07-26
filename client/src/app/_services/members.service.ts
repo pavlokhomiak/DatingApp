@@ -82,8 +82,7 @@ export class MembersService {
     return this.http.put(this.baseUrl + 'users', member).pipe(
       map(() => {
         const index = this.members.indexOf(member);
-        // ... spread operator takes all elements in array[index] and spread them
-        // in general
+        // ... spread operator takes all elements in array[index] and spread them in general
         this.members[index] = { ...this.members[index], ...member }
       })
     );

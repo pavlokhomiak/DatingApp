@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace API.Helpers
 {
-    // can configure this to run before or after the endpoint execut request
+    // can configure this to run before or after the endpoint execute request
     public class LogUserActivity : IAsyncActionFilter
     {
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
