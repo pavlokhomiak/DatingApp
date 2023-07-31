@@ -12,14 +12,14 @@ namespace API.Controllers
     [Authorize]
     public class UsersController : BaseApiController
     {
-        private readonly IUserRepository _userRepository;
+        private readonly IUserService _userService;
         private readonly IMapper _mapper;
         private readonly IPhotoService _photoService;
 
-        public UsersController(IUserRepository userRepository, IMapper mapper, IPhotoService photoService)
+        public UsersController(IUserService userService, IMapper mapper, IPhotoService photoService)
         {
             _photoService = photoService;
-            _userRepository = userRepository;
+            _userService = userService;
             _mapper = mapper;
         }
 
@@ -27,22 +27,10 @@ namespace API.Controllers
         // [FromQuery] mean that the parameter is coming from the query string
         public async Task<ActionResult<PagedList<MemberDto>>> GetUsers([FromQuery]UserParams userParams)
         {
-            // var users = await _userRepository.GetUsersAsync();
-
-            // var usersToReturn = _mapper.Map<IEnumerable<MemberDto>>(users);
-
-            var currentUser = await _userRepository.GetUserByUsernameAsync(User.GetUsername());
-            userParams.CurrentUsername = currentUser.UserName;
-
-            if (string.IsNullOrEmpty(userParams.Gender)) 
-            {
-                userParams.Gender = currentUser.Gender == "male" ? "female" : "male";
-            }
-
-            var users = await _userRepository.GetMembersAsync(userParams);
-
-            Response.AddPaginationHeader(new PaginationHeader(users.CurrentPage, users.PageSize, 
-                users.TotalCount, users.TotalPages));
+            AppUser currentUser = await _userService.GetUserByUsernameAsync(User.GetUsername());
+            PagedList<MemberDto> users = await _userService.GetMembersAsync(currentUser, userParams);
+            PaginationHeader pgHeader = new(users.CurrentPage, users.PageSize, users.TotalCount, users.TotalPages);
+            Response.AddPaginationHeader(pgHeader);
 
             return Ok(users);
         }
@@ -50,10 +38,7 @@ namespace API.Controllers
         [HttpGet("{username}")]
         public async Task<ActionResult<MemberDto>> GetUser(string username)
         {
-            // var user = await _userRepository.GetUserByUsernameAsync(username);
-
-            // return _mapper.Map<MemberDto>(user);
-            return await _userRepository.GetMemberAsync(username);
+            return await _userService.GetMemberAsync(username);
         }
 
         [HttpPut]
@@ -61,24 +46,20 @@ namespace API.Controllers
         {
             // take username from security initialized in TokenService (moved to ClaimsPrincipalExtension)
             // var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var username = User.GetUsername();
-
-            var user = await _userRepository.GetUserByUsernameAsync(username);
-
+            var user = await _userService.GetUserByUsernameAsync(User.GetUsername());
             if (user == null) return NotFound();
 
             _mapper.Map(memberUpdateDto, user);
 
-            if (await _userRepository.SaveAllAsync()) return NoContent();
-
-            return BadRequest("Failed to update user");
+            return await _userService.SaveAllAsync() 
+                ? NoContent() 
+                : BadRequest("Failed to update user");
         }
 
         [HttpPost("add-photo")]
         public async Task<ActionResult<PhotoDto>> AddPhoto(IFormFile file) 
         {
-            var username = User.GetUsername();
-            var user = await _userRepository.GetUserByUsernameAsync(username);
+            var user = await _userService.GetUserByUsernameAsync(User.GetUsername());
 
             if (user == null) return NotFound();
 
@@ -96,7 +77,7 @@ namespace API.Controllers
 
             user.Photos.Add(photo);
 
-            if (await _userRepository.SaveAllAsync()) 
+            if (await _userService.SaveAllAsync()) 
             {
                 // this return 201 response code with Location header point to GetUser(username) API url
                 return CreatedAtAction(
@@ -111,7 +92,7 @@ namespace API.Controllers
 
         [HttpPut("set-main-photo/{photoId}")]
         public async Task<ActionResult> SetMainPhoto(int photoId) {
-            var user = await _userRepository.GetUserByUsernameAsync(User.GetUsername());
+            var user = await _userService.GetUserByUsernameAsync(User.GetUsername());
             
             if (user == null) return NotFound();
 
@@ -127,14 +108,14 @@ namespace API.Controllers
 
             newPhoto.IsMain = true;
 
-            if (await _userRepository.SaveAllAsync()) return NoContent();
-
-            return BadRequest("Failed to set main photo");
+            return await _userService.SaveAllAsync() 
+                ? NoContent() 
+                : BadRequest("Failed to set main photo");
         }
 
         [HttpDelete("delete-photo/{photoId}")]
         public async Task<ActionResult> deletePhoto(int photoId) {
-            var user = await _userRepository.GetUserByUsernameAsync(User.GetUsername());
+            var user = await _userService.GetUserByUsernameAsync(User.GetUsername());
 
             if (user == null) return NotFound();
 
@@ -152,10 +133,9 @@ namespace API.Controllers
 
             user.Photos.Remove(photo);
 
-            if (await _userRepository.SaveAllAsync()) return Ok();
-
-            return BadRequest("Failed to delete photo");
+            return await _userService.SaveAllAsync() 
+                ? Ok() 
+                : BadRequest("Failed to delete photo");
         }
-
     }
 }

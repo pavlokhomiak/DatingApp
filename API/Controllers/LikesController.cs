@@ -11,9 +11,11 @@ namespace API.Controllers
     {
         private readonly ILikesRepository _likesRepository;
         private readonly IUserRepository _userRepository;
-        public LikesController(IUserRepository userRepository, ILikesRepository likesRepository)
+        private readonly IUserService _userService;
+        public LikesController(IUserRepository userRepository, IUserService userService, ILikesRepository likesRepository)
         {
             _userRepository = userRepository;
+            _userService = userService;
             _likesRepository = likesRepository;
             
         }
@@ -40,7 +42,7 @@ namespace API.Controllers
             
             sourceUser.LikedUsers.Add(userLike);
             
-            if (await _userRepository.SaveAllAsync()) return Ok();
+            if (await _userService.SaveAllAsync()) return Ok();
             
             return BadRequest("Failed to like user");
         }
